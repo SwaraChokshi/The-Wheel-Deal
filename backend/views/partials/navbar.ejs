@@ -1,0 +1,120 @@
+<nav class="bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      
+      <!-- left: logo -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-3">
+          <div class="p-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center">
+            <!-- small car SVG -->
+            <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 13l2-5h14l2 5" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="text-lg font-semibold text-slate-900">The Wheel Deal</span>
+        </a>
+      </div>
+
+      <!-- center: nav links (hidden on small) -->
+      <div class="hidden md:flex md:items-center md:gap-8">
+        <a href="/cars" class="text-sm font-medium text-slate-700 hover:text-blue-600 transition">Browse Cars</a>
+        <a href="/dashboard" class="text-sm font-medium text-slate-700 hover:text-blue-600 transition">My Bookings</a>
+        <!-- add more links if needed -->
+      </div>
+
+      <!-- right: user / auth buttons -->
+      <div class="flex items-center gap-3">
+        <% if (user) { %>
+          <div class="hidden sm:flex items-center gap-3">
+            <!-- small avatar circle -->
+            <div class="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-sm font-semibold text-slate-700">
+              <%= (user.username || 'U').charAt(0).toUpperCase() %>
+            </div>
+            <div class="hidden sm:flex flex-col">
+              <a href="/dashboard" class="text-sm font-medium text-slate-700 hover:text-blue-600"><%= user.username %></a>
+              <span class="text-xs text-slate-400">Member</span>
+            </div>
+
+            <form method="POST" action="/logout" class="ml-2">
+              <button type="submit" class="inline-flex items-center px-3 py-1 border border-gray-200 rounded-md text-sm text-slate-700 hover:bg-gray-50">
+                <!-- logout icon -->
+                <svg class="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 16l4-4-4-4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 8v8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Logout
+              </button>
+            </form>
+          </div>
+
+          <!-- on very small screens show just name and logout icon -->
+          <div class="sm:hidden flex items-center gap-2">
+            <span class="text-sm font-medium text-slate-700"><%= user.username %></span>
+            <form method="POST" action="/logout">
+              <button type="submit" class="p-2 rounded-md border border-gray-200">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 16l4-4-4-4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 8v8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </form>
+          </div>
+        <% } else { %>
+          <div class="hidden sm:flex items-center gap-3">
+            <a href="/login" class="text-sm text-slate-700 hover:text-blue-600">Login</a>
+            <a href="/register" class="px-3 py-1 rounded-md bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-medium">Sign Up</a>
+          </div>
+
+          <!-- mobile fallback -->
+          <div class="sm:hidden">
+            <a href="/login" class="text-sm text-slate-700">Login</a>
+          </div>
+        <% } %>
+
+        <!-- mobile hamburger -->
+        <button id="nav-toggle" aria-label="Toggle menu" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-slate-700 border border-gray-100 hover:bg-gray-50">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- mobile menu (hidden by default) -->
+  <div id="mobile-menu" class="md:hidden hidden border-t border-gray-100 bg-white/95">
+    <div class="px-4 py-3 space-y-2">
+      <a href="/cars" class="block text-slate-700 font-medium py-2">Browse Cars</a>
+      <a href="/dashboard" class="block text-slate-700 font-medium py-2">My Bookings</a>
+
+      <% if (!user) { %>
+        <a href="/login" class="block text-slate-700 py-2">Login</a>
+        <a href="/register" class="block px-3 py-2 rounded-md bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-center">Sign Up</a>
+      <% } else { %>
+        <div class="pt-2 border-t border-gray-100">
+          <div class="flex items-center gap-3 py-2">
+            <div class="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-sm font-semibold text-slate-700">
+              <%= (user.username || 'U').charAt(0).toUpperCase() %>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-slate-800"><%= user.username %></div>
+              <div class="text-xs text-slate-400">Member</div>
+            </div>
+          </div>
+          <form method="POST" action="/logout" class="mt-2">
+            <button type="submit" class="w-full inline-flex justify-center items-center gap-2 px-3 py-2 rounded-md border border-gray-200 bg-white text-slate-700">Logout</button>
+          </form>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <script>
+    // simple mobile menu toggle
+    (function(){
+      const btn = document.getElementById('nav-toggle');
+      const menu = document.getElementById('mobile-menu');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+      });
+    })();
+  </script>
+
+  <style>
+    /* tiny tweaks to make navbar feel more 'app-like' */
+    nav { backdrop-filter: blur(6px); }
+  </style>
+</nav>

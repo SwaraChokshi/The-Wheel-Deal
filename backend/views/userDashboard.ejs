@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Bookings — The Wheel Deal</title>
+
+  <!-- Tailwind CDN (fast) - replace with compiled CSS for production -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- lucide icons -->
+  <script src="https://unpkg.com/lucide@0.264.0/dist/lucide.min.js"></script>
+</head>
+<body class="min-h-screen bg-gray-50 pt-0 pb-12">
+  <%- include('partials/navbar') %>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold mb-2">My Bookings</h1>
+      <p class="text-gray-600">Welcome back, <%= user?.username || 'Guest' %>!</p>
+    </div>
+
+    <% if (error) { %>
+      <div class="mb-4 text-red-600"><%= error %></div>
+    <% } %>
+
+    <% if (!bookings || bookings.length === 0) { %>
+      <div class="border-none shadow-lg bg-white rounded-lg">
+        <div class="py-20 text-center">
+          <svg class="h-16 w-16 text-gray-400 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13l2-5h14l2 5" /></svg>
+          <p class="text-xl text-gray-600">No bookings yet</p>
+          <p class="text-gray-500 mt-2">Start exploring our cars and make your first booking!</p>
+        </div>
+      </div>
+    <% } else { %>
+      <div id="bookings-list" class="space-y-6">
+        <% bookings.forEach(function(booking, idx){ 
+             const isPaid = booking.payment_status === 'paid' || booking.payment_status === 'mock_paid';
+             const needsPayment = ['payment_pending','pending','payment_failed'].includes(booking.payment_status);
+        %>
+          <div class="border-none shadow-lg hover:shadow-xl transition-shadow bg-white rounded-lg"
+               data-booking-id="<%= booking.id %>"
+               id="booking-<%= booking.id %>">
+            <div class="p-4 flex justify-between items-start w-full">
+              <div>
+                <h2 class="text-2xl mb-2"><%= booking.car_name %></h2>
+                <% 
+                  const statusClassMap = {
+                    pending: 'bg-yellow-100 text-yellow-800',
+                    confirmed: 'bg-green-100 text-green-800',
+                    completed: 'bg-blue-100 text-blue-800',
+                    cancelled: 'bg-red-100 text-red-800'
+                  };
+                  const statusClass = statusClassMap[booking.status] || 'bg-gray-100 text-gray-800';
+                %>
+                <span class="inline-block px-2 py-1 rounded text-sm font-medium <%= statusClass %>">
+                  <%= (booking.status || '').toUpperCase() %>
+                </span>
+              </div>
+
+              <div class="text-right">
+                <p class="text-sm text-gray-600">Total Price</p>
+                <p class="text-3xl font-bold text-blue-600">₹<%= booking.total_price %></p>
+              </div>
+            </div>
+
+            <div class="p-4 border-t">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="flex items-start gap-3">
+                  <div class="bg-blue-100 p-2 rounded-lg">
+                    <i data-lucide="calendar" class="lucide-icon"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600">Pickup Date</p>
+                    <p class="font-semibold"><%= new Date(booking.pickup_date).toLocaleDateString() %></p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                  <div class="bg-cyan-100 p-2 rounded-lg">
+                    <i data-lucide="calendar" class="lucide-icon"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600">Return Date</p>
+                    <p class="font-semibold"><%= new Date(booking.return_date).toLocaleDateString() %></p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                  <div class="bg-blue-100 p-2 rounded-lg">
+                    <i data-lucide="map-pin" class="lucide-icon"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600">Pickup Location</p>
+                    <p class="font-semibold"><%= booking.pickup_location %></p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 pt-6 border-t flex items-center justify-between">
+                <div class="flex items-center gap-2 text-sm">
+                  <i data-lucide="credit-card" class="lucide-icon"></i>
+                  <span class="text-green-600 font-semibold">Payment: <%= booking.payment_status %></span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <% if (needsPayment) { %>
+                    <button data-checkout-id="<%= booking.id %>" class="checkout-btn inline-flex items-center px-4 py-2 rounded-md bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-medium hover:opacity-95">
+                      Checkout / Pay
+                    </button>
+                  <% } %>
+
+                  <% if (!isPaid) { %>
+                    <button data-delete-id="<%= booking.id %>" class="delete-btn inline-flex items-center px-3 py-2 rounded-md bg-red-50 text-red-700 border border-red-100 hover:bg-red-100">
+                      <i data-lucide="trash-2" class="lucide-icon mr-2"></i> Delete
+                    </button>
+                  <% } else { %>
+                    <div class="text-sm text-green-700 font-semibold">Payment: <%= booking.payment_status %></div>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+
+  <script>
+    // init lucide icons
+    if (window.lucide) lucide.replace();
+
+    // delete / checkout handlers
+    document.addEventListener('click', async (e) => {
+      const del = e.target.closest('.delete-btn');
+      if (del) {
+        const id = del.getAttribute('data-delete-id');
+        if (!confirm('Delete this booking? This cannot be undone.')) return;
+        try {
+          const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE', credentials: 'include' });
+          const json = await res.json();
+          if (res.ok) {
+            const el = document.querySelector(`[data-booking-id="${id}"]`);
+            if (el) el.remove();
+            alert(json.message || 'Booking deleted');
+          } else {
+            alert(json.detail || 'Failed to delete booking');
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Failed to delete booking');
+        }
+      }
+
+      const checkout = e.target.closest('.checkout-btn');
+      if (checkout) {
+        const id = checkout.getAttribute('data-checkout-id');
+        window.location.href = `/checkout/${id}`;
+      }
+    });
+
+    // highlight last booking (optional)
+    (function highlightLastBooking(){
+      const lastBookingId = localStorage.getItem('lastBookingId');
+      if (!lastBookingId) return;
+      const el = document.querySelector(`[data-booking-id="${lastBookingId}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2','ring-blue-200');
+      }
+    })();
+
+    // poll refresh (optional)
+    setInterval(async () => {
+      try {
+        const res = await fetch('/dashboard/refresh', { credentials: 'include' });
+        if (res.ok) {
+          // optional reload: window.location.reload();
+        }
+      } catch (err) {
+        console.error('Polling error', err);
+      }
+    }, 15000);
+  </script>
+</body>
+</html>
