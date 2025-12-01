@@ -8,6 +8,9 @@
   const multer = require('multer');
   const { body, validationResult } = require('express-validator');
   const cookieParser = require('cookie-parser');
+  const User = require('./models/User');
+const Car = require('./models/Cars');
+const Booking = require('./models/Booking');
 
   const Stripe = require('stripe');
   const stripe = Stripe(process.env.STRIPE_SECRET_KEY || ''); // set in .env
@@ -37,101 +40,53 @@
   .then(() => console.log('✓ MongoDB Connected'))
   .catch(err => console.error('MongoDB Connection Error:', err));
 
-  // Mongoose Schemas
-  const userSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    username: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
-    created_at: { type: Date, default: Date.now }
-  });
-
-  const carSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    brand: { type: String, required: true },
-    model: { type: String, required: true },
-    year: { type: Number, required: true },
-    price_per_day: { type: Number, required: true },
-    image_url: { type: String, required: true },
-    location: { type: String, required: true },
-    seats: { type: Number, required: true },
-    transmission: { type: String, required: true },
-    fuel_type: { type: String, required: true },
-    availability: { type: Boolean, default: true },
-    created_at: { type: Date, default: Date.now }
-  });
-
-  // booking defaults to pending/payment_pending so checkout is required
-  const bookingSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    user_id: { type: String, required: true },
-    user_email: { type: String, required: true },
-    user_name: { type: String, required: true },
-    car_id: { type: String, required: true },
-    car_name: { type: String, required: true },
-    pickup_date: { type: String, required: true },
-    return_date: { type: String, required: true },
-    pickup_location: { type: String, required: true },
-    total_price: { type: Number, required: true },
-    status: { type: String, enum: ['pending', 'confirmed', 'completed', 'cancelled'], default: 'pending' },
-    payment_status: { type: String, enum: ['pending','payment_pending','paid','failed','refunded','mock_paid'], default: 'pending' },
-    payment_intent_id: { type: String, default: null },
-    created_at: { type: Date, default: Date.now }
-  });
-
-  const User = mongoose.model('User', userSchema);
-  const Car = mongoose.model('Car', carSchema);
-  const Booking = mongoose.model('Booking', bookingSchema);
 
   // Helpers
   const generateId = () => require('crypto').randomUUID();
   const generateToken = (userId, role) => jwt.sign({ sub: userId, role }, process.env.JWT_SECRET_KEY || 'your-secret-key-change-in-production', { expiresIn: '7d' });
 
   //Auth middleware
-  // const authenticateToken = async (req, res, next) => {
-  //   const authHeader = req.headers['authorization'];
-  //   const token = authHeader && authHeader.split(' ')[1];
-
-  //   if (!token) {
-  //     return res.status(401).json({ detail: 'No token provided' });
-  //   }
-
-  //   try {
-  //     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'your-secret-key-change-in-production');
-  //     const user = await User.findOne({ id: decoded.sub }).select('-password');
-  //     if (!user) return res.status(401).json({ detail: 'User not found' });
-  //     req.user = user;
-  //     next();
-  //   } catch (err) {
-  //     return res.status(401).json({ detail: 'Invalid or expired token' });
-  //   }
-  // };
-
-  // replace your existing authenticateToken with this
-const authenticateToken = async (req, res, next) => {
-  try {
-    // check Authorization header
+  const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    let token = authHeader && authHeader.split(' ')[1];
+    const token = authHeader && authHeader.split(' ')[1];
 
-    // fallback to cookie named 'token'
-    if (!token && req.cookies && req.cookies.token) token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ detail: 'No token provided' });
+    }
 
-    if (!token) return res.status(401).json({ detail: 'No token provided' });
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'your-secret-key-change-in-production');
+      const user = await User.findOne({ id: decoded.sub }).select('-password');
+      if (!user) return res.status(401).json({ detail: 'User not found' });
+      req.user = user;
+      next();
+    } catch (err) {
+      return res.status(401).json({ detail: 'Invalid or expired token' });
+    }
+  };
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'your-secret-key-change-in-production');
-    const user = await User.findOne({ id: decoded.sub }).select('-password');
-    if (!user) return res.status(401).json({ detail: 'User not found' });
+// const authenticateToken = async (req, res, next) => {
+//   try {
+//     // check Authorization header
+//     const authHeader = req.headers['authorization'];
+//     let token = authHeader && authHeader.split(' ')[1];
 
-    req.user = user;
-    req.token = token;
-    next();
-  } catch (err) {
-    return res.status(401).json({ detail: 'Invalid or expired token' });
-  }
-};
+//     // fallback to cookie named 'token'
+//     if (!token && req.cookies && req.cookies.token) token = req.cookies.token;
+
+//     if (!token) return res.status(401).json({ detail: 'No token provided' });
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'your-secret-key-change-in-production');
+//     const user = await User.findOne({ id: decoded.sub }).select('-password');
+//     if (!user) return res.status(401).json({ detail: 'User not found' });
+
+//     req.user = user;
+//     req.token = token;
+//     next();
+//   } catch (err) {
+//     return res.status(401).json({ detail: 'Invalid or expired token' });
+//   }
+// };
 
 
   const requireAdmin = (req, res, next) => {
@@ -321,7 +276,6 @@ app.get('/test-dashboard', (req, res) => {
   ];
   res.render('userDashboard', { user: sampleUser, bookings: sampleBookings, error: null });
 });
-// ---- end snippet ----
 
 
   // 1. PUBLIC availability endpoint MUST come FIRST (no auth required)
