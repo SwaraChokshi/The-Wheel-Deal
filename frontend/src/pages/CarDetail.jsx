@@ -1,3 +1,4 @@
+// src/pages/CarDetail.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -36,9 +37,35 @@ const CarDetail = () => {
       .finally(() => setLoading(false));
   }, [carId, navigate]);
 
+  // calculate days and total price consistent with server logic:
+  // server uses Math.ceil((return - pickup) / dayMs) + 1
+  const getDays = () => {
+    if (!booking.pickupDate || !booking.returnDate) return 0;
+    const pickup = new Date(booking.pickupDate);
+    const ret = new Date(booking.returnDate);
+    const diff = ret - pickup;
+    if (isNaN(diff) || diff < 0) return 0;
+    const dayMs = 1000 * 60 * 60 * 24;
+    return Math.ceil(diff / dayMs) + 1;
+  };
+
+  const days = getDays();
+  const totalPrice = car ? days * car.price_per_day : 0;
+
+  // handleBooking: create booking but DO NOT redirect to checkout
   const handleBooking = async (e) => {
     e.preventDefault();
-    
+
+    // basic date validation
+    if (!booking.pickupDate || !booking.returnDate) {
+      toast.error('Please select both pickup and return dates');
+      return;
+    }
+    if (new Date(booking.returnDate) < new Date(booking.pickupDate)) {
+      toast.error('Return date must be same or after pickup date');
+      return;
+    }
+
     if (!user) {
       openAuth('login');
       return;
@@ -47,7 +74,7 @@ const CarDetail = () => {
     setBookingLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
+      const res = await axios.post(
         `${API}/bookings`,
         {
           car_id: carId,
@@ -59,9 +86,16 @@ const CarDetail = () => {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
-      toast.success('Booking confirmed! Check your dashboard.');
-      navigate('/dashboard');
+
+      const savedBooking = res.data;
+      // DON'T redirect to checkout (as requested)
+      toast.success('Booking created. You can complete payment from My Bookings.');
+      // clear form
+      setBooking({ pickupDate: '', returnDate: '', pickupLocation: '' });
+      // optional: store lastBookingId to highlight in dashboard if you use that flow
+      try { localStorage.setItem('lastBookingId', savedBooking.id); } catch (err) { /* ignore */ }
     } catch (error) {
+      console.error('Booking error:', error);
       toast.error(error.response?.data?.detail || 'Booking failed');
     } finally {
       setBookingLoading(false);
@@ -81,9 +115,9 @@ const CarDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12" data-testid="car-detail-page">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate('/cars')} 
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/cars')}
           className="mb-6"
           data-testid="back-btn"
         >
@@ -217,19 +251,20 @@ const CarDetail = () => {
                     </div>
                   </div>
 
+                  {/* Booking summary: show days and total price (keeps total as you requested) */}
                   <div className="bg-gray-50 p-6 rounded-xl">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-600">Price per day:</span>
-                      <span className="font-semibold">₹{car.price_per_day}</span>
+                      <span className="text-gray-600">Days:</span>
+                      <span className="font-semibold">{days || '-'}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Payment Status:</span>
-                      <span className="text-green-600 font-semibold">Mock Payment</span>
+                      <span className="text-gray-600">Total:</span>
+                      <span className="font-semibold text-2xl">₹{days ? totalPrice : '-'}</span>
                     </div>
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-lg py-6 rounded-xl"
                     disabled={bookingLoading}
                     data-testid="confirm-booking-btn"
@@ -240,9 +275,9 @@ const CarDetail = () => {
                   {!user && (
                     <p className="text-sm text-center text-gray-600">
                       Need an account?{' '}
-                      <button 
-                        type="button" 
-                        onClick={() => openAuth('register')} 
+                      <button
+                        type="button"
+                        onClick={() => openAuth('register')}
                         className="text-blue-600 hover:underline"
                         data-testid="signup-link"
                       >

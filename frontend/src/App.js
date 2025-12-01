@@ -12,6 +12,8 @@ import AdminRegister from './pages/AdminRegister';
 import AuthModal from './components/AuthModal';
 import { Toaster } from './components/ui/sonner';
 import './App.css';
+import Checkout from './pages/Checkout';
+import Footer from './components/Footer';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -73,28 +75,35 @@ function App() {
         <div className="App">
           <Navbar />
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/cars" element={<CarListings />} />
-            <Route path="/cars/:carId" element={<CarDetail />} />
-            <Route 
-              path="/dashboard" 
-              element={user ? <UserDashboard /> : <Navigate to="/" />} 
-            />
-            <Route 
-              path="/admin" 
-              element={<AdminPage />} 
-            />
-            <Route
-              path="/admin/register"
-              element={<AdminRegister />}
-            />
-          </Routes>
+  <Route path="/" element={<Home />} />
+  <Route path="/cars" element={<CarListings />} />
+  <Route path="/cars/:carId" element={<CarDetail />} />
+
+  {/* NEW CHECKOUT ROUTE */}
+  <Route path="/checkout/:bookingId" element={<Checkout />} />
+
+  <Route 
+    path="/dashboard" 
+    element={user ? <UserDashboard /> : <Navigate to="/" />} 
+  />
+  <Route 
+    path="/admin" 
+    element={<AdminPage />} 
+  />
+  <Route
+    path="/admin/register"
+    element={<AdminRegister />}
+  />
+</Routes>
+
           {showAuthModal && (
             <AuthModal 
               mode={authMode} 
               onClose={() => setShowAuthModal(false)} 
             />
           )}
+          <Footer/>
+
           <Toaster position="top-right" />
         </div>
       </BrowserRouter>
