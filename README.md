@@ -33,20 +33,43 @@ The-Wheel-Deal/
 │   │   ├── pages/
 │   │   ├── contexts/
 │   │   └── App.jsx
+│   ├── build/                # Production build
+│   ├── node_modules/
+│   ├── plugins/
 │   ├── public/
-│   └── package.json
+│   ├── .env
+│   ├── .gitignore
+│   ├── components.json
+│   ├── craco.config.js
+│   ├── jsconfig.json
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
 │
 ├── backend/                  # Node.js + Express Backend
+│   ├── models/               # Mongoose schemas
+│   │   ├── User.js
+│   │   ├── Car.js
+│   │   └── Booking.js
 │   ├── views/                # EJS templates
 │   │   ├── partials/
 │   │   │   └── navbar.ejs
 │   │   └── userDashboard.ejs
 │   ├── public/               # Static assets
-│   ├── server.js             # Main server file
+│   ├── node_modules/
+│   ├── .env                  # Environment variables
+│   ├── .gitignore
+│   ├── package-lock.json
 │   ├── package.json
-│   └── .env                  # Environment variables
+│   ├── server.js             # Main server file
+│   ├── test-mongo.js
+│   
 │
-└── README.md
+├── .gitignore
+├── frontend.zip
+├── README.md
+
 ```
 
 ## Installation & Setup
@@ -154,13 +177,6 @@ Frontend will run at: `http://localhost:3000`
 | POST | `/create-payment-intent` | Create Stripe payment intent | Yes |
 | POST | `/capture-payment` | Capture payment (manual capture) | Yes |
 
-### Additional Endpoints
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/api/upload` | Upload car image (base64) | Yes (Admin) |
-| GET | `/test-dashboard` | Test user dashboard (dev only) | No |
-| GET | `/` | API health check | No |
 
 ## Environment Variables
 
